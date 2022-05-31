@@ -1,10 +1,10 @@
-const connection = require('../db-config');
-const Joi = require('joi');
+const connection = require("../db-config");
+const Joi = require("joi");
 
 const db = connection.promise();
 
 const validate = (data, forCreation = true) => {
-  const presence = forCreation ? 'required' : 'optional';
+  const presence = forCreation ? "required" : "optional";
   return Joi.object({
     title: Joi.string().max(255).presence(presence),
     director: Joi.string().max(255).presence(presence),
@@ -14,19 +14,28 @@ const validate = (data, forCreation = true) => {
   }).validate(data, { abortEarly: false }).error;
 };
 
-const findMany = ({ filters: { color, max_duration } }) => {
-  let sql = 'SELECT * FROM movies';
+const findMany = ({ filters: { color, max_duration } }, userId) => {
+  let sql = "SELECT * FROM movies";
   const sqlValues = [];
 
   if (color) {
-    sql += ' WHERE color = ?';
+    sql += " WHERE color = ?";
     sqlValues.push(color);
   }
   if (max_duration) {
-    if (color) sql += ' AND duration <= ? ;';
-    else sql += ' WHERE duration <= ?';
+    if (color) sql += " AND duration <= ?";
+    else sql += " WHERE duration <= ?";
 
     sqlValues.push(max_duration);
+  }
+
+  if (userId) {
+    if (color || max_duration) {
+      sql += " AND user_id = ?";
+    } else {
+      sql += " WHERE user_id = ?";
+    }
+    sqlValues.push(userId);
   }
 
   return db.query(sql, sqlValues).then(([results]) => results);
@@ -34,29 +43,29 @@ const findMany = ({ filters: { color, max_duration } }) => {
 
 const findOne = (id) => {
   return db
-    .query('SELECT * FROM movies WHERE id = ?', [id])
+    .query("SELECT * FROM movies WHERE id = ?", [id])
     .then(([results]) => results[0]);
 };
 
-const create = ({ title, director, year, color, duration }) => {
+const create = ({ title, director, year, color, duration }, userId) => {
   return db
     .query(
-      'INSERT INTO movies (title, director, year, color, duration) VALUES (?, ?, ?, ?, ?)',
-      [title, director, year, color, duration]
+      "INSERT INTO movies (title, director, year, color, duration, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+      [title, director, year, color, duration, userId]
     )
     .then(([result]) => {
       const id = result.insertId;
-      return { id, title, director, year, color, duration };
+      return { id, title, director, year, color, duration, userId };
     });
 };
 
 const update = (id, newAttributes) => {
-  return db.query('UPDATE movies SET ? WHERE id = ?', [newAttributes, id]);
+  return db.query("UPDATE movies SET ? WHERE id = ?", [newAttributes, id]);
 };
 
 const destroy = (id) => {
   return db
-    .query('DELETE FROM movies WHERE id = ?', [id])
+    .query("DELETE FROM movies WHERE id = ?", [id])
     .then(([result]) => result.affectedRows !== 0);
 };
 
