@@ -1,46 +1,22 @@
 const moviesRouter = require("express").Router();
 const Movie = require("../models/movie");
 const User = require("../models/user");
+const { decodeToken } = require("../helpers/users");
 
 moviesRouter.get("/", (req, res) => {
   const { max_duration, color } = req.query;
-  if (req.cookies.user_token) {
-    const token = req.cookies.user_token;
-    User.findByToken(token).then((user) => {
-      if (!user) res.status(401).send("Invalid credentials");
-      else {
-        Movie.findMany({ filters: { max_duration, color } }, user.id)
-          .then((movies) => {
-            res.json(movies);
-          })
-          .catch((err) => {
-            console.log(err);
-            res.status(500).send("Error retrieving movies from database");
-          });
-      }
-    });
+  if (req.cookies.auth_token) {
+    Movie.findMany({ filters: { max_duration, color } }, req.userId)
+      .then((movies) => {
+        res.json(movies);
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(500).send("Error retrieving movies from database");
+      });
   } else {
-    res.status(401).send("Please login to see your movies");
-    // Movie.findMany({ filters: { max_duration, color } })
-    //   .then((movies) => {
-    //     res.json(movies);
-    //   })
-    //   .catch((err) => {
-    //     console.log(err);
-    //     res.status(500).send("Error retrieving movies from database");
-    //   });
+    res.status(500).send("An error occured");
   }
-});
-
-moviesRouter.get("/", async (req, res) => {
-  const { max_duration, color } = req.query;
-  Movie.findMany({ filters: { max_duration, color } })
-    .then((movies) => {
-      res.json(movies);
-    })
-    .catch((err) => {
-      res.status(500).send("Error retrieving movies from database");
-    });
 });
 
 moviesRouter.get("/:id", (req, res) => {
@@ -61,23 +37,17 @@ moviesRouter.post("/", (req, res) => {
   const error = Movie.validate(req.body);
   if (error) {
     res.status(422).json({ validationErrors: error.details });
-  } else if (req.cookies.user_token) {
-    const token = req.cookies.user_token;
-    User.findByToken(token).then((user) => {
-      if (!user) res.status(401).send("Invalid credentials");
-      else {
-        Movie.create(req.body, user.id)
-          .then((createdMovie) => {
-            res.status(201).json(createdMovie);
-          })
-          .catch((err) => {
-            console.error(err);
-            res.status(500).send("Error saving the movie");
-          });
-      }
-    });
+  } else if (req.cookies.auth_token) {
+    Movie.create(req.body, req.userId)
+      .then((createdMovie) => {
+        res.status(201).json(createdMovie);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Error saving the movie");
+      });
   } else {
-    res.status(401).send("Please login to access this functionality");
+    res.status(500).send("An error occured");
   }
 });
 

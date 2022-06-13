@@ -1,23 +1,14 @@
-const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 
 const PRIVATE_KEY = "superSecretStringNowoneShouldKnowOrTheyCanGenerateTokens";
 
-const calculateToken = (userEmail = "") => {
-  return crypto
-    .createHash("md5")
-    .update(userEmail + PRIVATE_KEY)
-    .digest("hex");
+const calculateToken = (payload) => {
+  console.log(payload);
+  return jwt.sign({ payload }, PRIVATE_KEY, { expiresIn: "1h" });
 };
 
-// now some tests:
+const decodeToken = (token) => {
+  return jwt.decode(token, PRIVATE_KEY);
+};
 
-calculateToken("firstEmail@gmail.com");
-// returns 731f04b6e83c8e911e0520a1994afaae
-
-calculateToken("otherEmail@gmail.com");
-// returns add347e092ce4da01f669b41b0b5354b
-
-calculateToken("firstEmail@gmail.com");
-// returns 731f04b6e83c8e911e0520a1994afaae (just as the first string)
-
-module.exports = { calculateToken };
+module.exports = { calculateToken, decodeToken };

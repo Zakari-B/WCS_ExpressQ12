@@ -42,12 +42,6 @@ const findByEmail = (email) => {
     .then(([results]) => results[0]);
 };
 
-const findByToken = (token) => {
-  return db
-    .query("SELECT * FROM users WHERE token = ?", [token])
-    .then(([results]) => results[0]);
-};
-
 const findByEmailWithDifferentId = (email, id) => {
   return db
     .query("SELECT * FROM users WHERE email = ? AND id <> ?", [email, id])
@@ -105,7 +99,6 @@ module.exports = {
   update,
   destroy,
   findByEmail,
-  findByToken,
   findByEmailWithDifferentId,
   hashPassword,
   verifyPassword,

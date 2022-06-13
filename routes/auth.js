@@ -1,24 +1,9 @@
-const authRouter = require("express").Router();
-const User = require("../models/user");
-const { calculateToken } = require("../helpers/users");
+const express = require("express");
 
-authRouter.post("/login", (req, res) => {
-  const { email, password } = req.body;
-  User.findByEmail(email).then((user) => {
-    if (!user) res.status(401).send("Invalid credentials");
-    else {
-      User.verifyPassword(password, user.hashedPassword).then(
-        (passwordIsCorrect) => {
-          if (passwordIsCorrect) {
-            const token = calculateToken(email);
-            User.update(user.id, { token: token });
-            res.cookie("user_token", token);
-            res.send();
-          } else res.status(401).send("Invalid credentials");
-        }
-      );
-    }
-  });
-});
+const authController = require("../controllers/authController");
 
-module.exports = authRouter;
+const router = express.Router();
+
+router.post("/login", authController.login);
+
+module.exports = router;
